@@ -7,13 +7,14 @@ pkgrel=5
 pkgdesc='Very resourcefriendly and feature-rich replacement for i3status to use with bar programs (like i3bar and swaybar), written in pure Rust'
 arch=('x86_64')
 url='https://github.com/greshake/i3status-rust'
-license=('GPL3')
-depends=('libpulse' 'lm_sensors' 'notmuch')
-makedepends=('git' 'rust' 'pandoc')
+license=('GPL-3.0-only')
+depends=('libpulse' 'lm_sensors' 'libpipewire' 'notmuch')
+makedepends=('git' 'rust' 'pandoc' 'clang')
 optdepends=('alsa-utils: for the volume block'
             'bluez: for the bluetooth block'
             'fakeroot: for the pacman block to show pending updates'
             'kdeconnect: for the kdeconnect block'
+            'pipewire: for the privacy block'
             'powerline-fonts: for all themes using the powerline arrow char'
             'pulseaudio: for the volume block'
             'speedtest-cli: for the speedtest block'
@@ -30,9 +31,16 @@ pkgver() {
   echo $(grep '^version =' Cargo.toml|head -n1|cut -d\" -f2).r$(git rev-list --count HEAD).g$(git describe --always)
 }
 
+prepare() {
+  cd "${shortname}"
+  cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
 build() {
   cd "${shortname}"
-  cargo build --release --features "pulseaudio maildir notmuch"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --release --features "pulseaudio maildir pipewire notmuch"
   cargo xtask generate-manpage
 }
 
